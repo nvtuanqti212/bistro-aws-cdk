@@ -1,4 +1,4 @@
-package com.myorg.stack;
+package com.myorg.construct;
 
 import software.amazon.awscdk.Tags;
 import software.constructs.IConstruct;
