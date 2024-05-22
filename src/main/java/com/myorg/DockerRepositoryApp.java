@@ -18,13 +18,17 @@ import static com.myorg.constant.InputParameters.ACCOUNT_ID;
 public class DockerRepositoryApp {
     public static void main(final String[] args) {
         App app = new App();
+
         String region = (String) app
                 .getNode()
                 .tryGetContext("region");
         DataUtil.requireNonEmptyOrNull(region, "context variable 'region' must not be null");
 
-        String applicationName = (String) app.getNode().tryGetContext("applicationName");
+        String applicationName = (String) app
+                .getNode()
+                .tryGetContext("applicationName");
         DataUtil.requireNonEmptyOrNull(applicationName, "context variable 'applicationName' must not be null");
+
         Environment awsEnvironment = AWSUtils.makeEnv(ACCOUNT_ID, region);
 
         Stack dockerRepositoryStack = new Stack(
@@ -34,6 +38,7 @@ public class DockerRepositoryApp {
                         .stackName(applicationName + "-DockerRepository")
                         .env(awsEnvironment)
                         .build());
+
         DockerRepository dockerRepository = new DockerRepository(
                 dockerRepositoryStack,
                 "DockerRepository",
