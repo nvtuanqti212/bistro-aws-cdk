@@ -3,6 +3,7 @@ package com.myorg.construct;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroup;
+import software.amazon.awscdk.services.ec2.CfnSecurityGroupIngress;
 import software.amazon.awscdk.services.rds.CfnDBInstance;
 import software.amazon.awscdk.services.rds.CfnDBSubnetGroup;
 import software.amazon.awscdk.services.secretsmanager.CfnSecretTargetAttachment;
@@ -58,10 +59,19 @@ public class Database extends Construct {
 
         String username = sanitizeDbParameterName(applicationEnvironment.prefix("bistro"));
 
+
         databaseSecurityGroup = CfnSecurityGroup.Builder.create(this, DATABASE_SECURITY_GROUP)
                 .vpcId(networkOutputParameters.getVpcId())
                 .groupDescription("Security Group for the database instance")
                 .groupName(applicationEnvironment.prefix("dbSecurityGroup"))
+                .build();
+
+        CfnSecurityGroupIngress dbIngressFromSelf = CfnSecurityGroupIngress.Builder.create(this, " dbIngressFromSelf")
+                .ipProtocol("tcp")
+                .fromPort(3306)
+                .groupId(databaseSecurityGroup.getAttrGroupId())
+                .sourceSecurityGroupId(databaseSecurityGroup.getAttrGroupId())
+                .toPort(3306)
                 .build();
 
         // This will generate a JSON object with the keys "username" and "password".

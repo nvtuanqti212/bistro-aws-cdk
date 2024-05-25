@@ -1,6 +1,7 @@
 package com.myorg;
 
 import com.myorg.construct.ApplicationEnvironment;
+import com.myorg.construct.Database;
 import com.myorg.construct.Network;
 import com.myorg.construct.Service;
 import com.myorg.util.AWSUtils;
@@ -9,6 +10,9 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.secretsmanager.ISecret;
+import software.amazon.awscdk.services.secretsmanager.Secret;
+import software.constructs.Construct;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +57,12 @@ public class ServiceApp {
                 environmentName
         );
 
+        long timestamp = System.currentTimeMillis();
+        Stack parametersStack = new Stack(app, "ServiceParameters-" + timestamp, StackProps.builder()
+                .stackName(applicationEnvironment.prefix("Service-Parameters-" + timestamp))
+                .env(awsEnvironment)
+                .build());
+
         Stack serviceStack = new Stack(
                 app,
                 "ServiceStack",
@@ -69,10 +79,13 @@ public class ServiceApp {
                 serviceStack, applicationEnvironment.getEnvironmentName()
         );
 
+        Database.DatabaseOutputParameters databaseOutputParameters = Database.getOutputParametersFromParameterStore(parametersStack, applicationEnvironment);
+
         Service.ServiceInputParameters serviceInputParameters = new Service.ServiceInputParameters(
                 dockerImageSource,
-                environmentVariables(springProfile)
+                environmentVariables(serviceStack, springProfile, databaseOutputParameters)
         ).withHealthCheckIntervalSeconds(30);
+
 
         Service service = new Service(
                 serviceStack,
@@ -86,9 +99,33 @@ public class ServiceApp {
         app.synth();
     }
 
-    static Map<String, String> environmentVariables(String springProfile) {
+    static Map<String, String> environmentVariables(
+            Construct scope,
+            String springProfile,
+            Database.DatabaseOutputParameters databaseOutputParameters
+    ) {
         Map<String, String> vars = new HashMap<>();
+
+        String databaseSecretArn = databaseOutputParameters.getDatabaseSecretArn();
+        ISecret databaseSecret = Secret.fromSecretCompleteArn(scope, "databaseSecret", databaseSecretArn);
+
         vars.put("SPRING_PROFILES_ACTIVE", springProfile);
+        vars.put("MYSQL_HOST", databaseOutputParameters.getEndpointAddress());
+        vars.put("MYSQL_PORT", databaseOutputParameters.getEndpointPort());
+        vars.put("MYSQL_DATABASE", databaseOutputParameters.getDbName());
+        vars.put("MYSQL_USERNAME", databaseSecret.secretValueFromJson("username").unsafeUnwrap());
+        vars.put("MYSQL_PASSWORD", databaseSecret.secretValueFromJson("password").unsafeUnwrap());
+        vars.put("MYSQL_DDL_AUTO", "update");
+//        vars.put("SPRING_DATASOURCE_URL",
+//                String.format("jdbc:mysql://%s:%s/%s",
+//                        databaseOutputParameters.getEndpointAddress(),
+//                        databaseOutputParameters.getEndpointPort(),
+//                        databaseOutputParameters.getDbName())
+//        );
+//        vars.put("SPRING_DATASOURCE_USERNAME",
+//                databaseSecret.secretValueFromJson("username").unsafeUnwrap());
+//        vars.put("SPRING_DATASOURCE_PASSWORD",
+//                databaseSecret.secretValueFromJson("password").unsafeUnwrap());
         return vars;
     }
 }

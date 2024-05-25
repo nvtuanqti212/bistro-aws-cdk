@@ -2,6 +2,7 @@ package com.myorg.construct;
 
 import software.amazon.awscdk.*;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroup;
+import software.amazon.awscdk.services.ec2.CfnSecurityGroupEgress;
 import software.amazon.awscdk.services.ec2.CfnSecurityGroupIngress;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
@@ -119,7 +120,15 @@ public class Service extends Construct {
                                                 "ecr:GetAuthorizationToken",
                                                 "ecr:BatchCheckLayerAvailability",
                                                 "ecr:GetDownloadUrlForLayer",
+                                                "ecr:GetRepositoryPolicy",
+                                                "ecr:DescribeRepositories",
+                                                "ecr:ListImages",
+                                                "ecr:DescribeImages",
                                                 "ecr:BatchGetImage",
+                                                "ecr:GetLifecyclePolicy",
+                                                "ecr:GetLifecyclePolicyPreview",
+                                                "ecr:ListTagsForResource",
+                                                "ecr:DescribeImageScanFindings",
                                                 "logs:CreateLogStream",
                                                 "logs:PutLogEvents"))
                                         .build()))
@@ -157,8 +166,8 @@ public class Service extends Construct {
                 .logConfiguration(CfnTaskDefinition.LogConfigurationProperty.builder()
                         .logDriver("awslogs")
                         .options(Map.of(
-                                "aws-group", logGroup.getLogGroupName(),
-                                "aws-region", environment.getRegion(),
+                                "awslogs-group", logGroup.getLogGroupName(),
+                                "awslogs-region", environment.getRegion(),
                                 "awslogs-stream-prefix", applicationEnvironment.prefix("stream"),
                                 "awslogs-datetime-format", serviceInputParameters.awslogsDateTimeFormat
                         ))
@@ -192,11 +201,21 @@ public class Service extends Construct {
                 .groupId(ecsSecurityGroup.getAttrGroupId())
                 .build();
 
+        CfnSecurityGroupEgress ecsEgressRule = CfnSecurityGroupEgress.Builder.create(this, "ecsEgressFromSelf")
+                .ipProtocol("tcp") // Protocol (e.g., tcp, udp)
+                .cidrIp("0.0.0.0/0") // Destination CIDR block
+                .fromPort(0)
+                .toPort(65535)
+                .groupId(ecsSecurityGroup.getAttrGroupId())
+                .description("Allow all outbound TCP traffic")
+                .build();
+
         allowIngressFromEcs(serviceInputParameters.securityGroupIdsToGrantIngressFromEcs, ecsSecurityGroup);
 
         CfnService service = CfnService.Builder.create(this, "ecsService")
+                .cluster(networkOutputParameters.getEcsClusterName())
                 .launchType("FARGATE")
-                .deploymentConfiguration(CfnService.DeploymentConfigurationProperty.builder()
+                    .deploymentConfiguration(CfnService.DeploymentConfigurationProperty.builder()
                         .maximumPercent(serviceInputParameters.maximumInstancesPercent)
                         .minimumHealthyPercent(serviceInputParameters.minimumHealthyInstancesPercent)
                         .build())
