@@ -57,7 +57,7 @@ public class Database extends Construct {
         Network.NetworkOutputParameters networkOutputParameters = Network
                 .getOutputParametersFromParameterStore(this, applicationEnvironment.getEnvironmentName());
 
-        String username = sanitizeDbParameterName(applicationEnvironment.prefix("bistro"));
+        String username = sanitizeDbParameterName(applicationEnvironment.prefix("database"));
 
 
         databaseSecurityGroup = CfnSecurityGroup.Builder.create(this, DATABASE_SECURITY_GROUP)
@@ -94,7 +94,7 @@ public class Database extends Construct {
 
         dbInstance = CfnDBInstance.Builder.create(this, "rdsInstance")
                 .dbInstanceIdentifier(applicationEnvironment.prefix("database"))
-                .dbName(sanitizeDbParameterName(applicationEnvironment.prefix("bistro")))
+                .dbName(sanitizeDbParameterName(applicationEnvironment.prefix("database")))
                 .allocatedStorage(String.valueOf(databaseInputParameters.storageInGb))
                 .availabilityZone(networkOutputParameters.getAvailabilityZones().get(0))
                 .dbInstanceClass(databaseInputParameters.instanceClass)

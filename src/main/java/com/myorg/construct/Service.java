@@ -195,7 +195,7 @@ public class Service extends Construct {
                 .groupDescription("Security Group for the ECS")
                 .build();
 
-        CfnSecurityGroupIngress ecsIngressFromSelf = CfnSecurityGroupIngress.Builder.create(this, " ecsIngressFromSelf")
+        CfnSecurityGroupIngress ecsIngressFromSelf = CfnSecurityGroupIngress.Builder.create(this, " ecsIngressFromSelf1")
                 .ipProtocol("-1")
                 .sourceSecurityGroupId(ecsSecurityGroup.getAttrGroupId())
                 .groupId(ecsSecurityGroup.getAttrGroupId())
@@ -210,12 +210,20 @@ public class Service extends Construct {
                 .description("Allow all outbound TCP traffic")
                 .build();
 
+        CfnSecurityGroupIngress ecsIngressRule = CfnSecurityGroupIngress.Builder.create(this, "ecsIngressFromSelf2")
+                .ipProtocol("tcp")
+                .fromPort(0)
+                .toPort(65535)
+                .groupId(ecsSecurityGroup.getAttrGroupId())
+                .cidrIp("0.0.0.0/0")
+                .build();
+
         allowIngressFromEcs(serviceInputParameters.securityGroupIdsToGrantIngressFromEcs, ecsSecurityGroup);
 
         CfnService service = CfnService.Builder.create(this, "ecsService")
                 .cluster(networkOutputParameters.getEcsClusterName())
                 .launchType("FARGATE")
-                    .deploymentConfiguration(CfnService.DeploymentConfigurationProperty.builder()
+                .deploymentConfiguration(CfnService.DeploymentConfigurationProperty.builder()
                         .maximumPercent(serviceInputParameters.maximumInstancesPercent)
                         .minimumHealthyPercent(serviceInputParameters.minimumHealthyInstancesPercent)
                         .build())

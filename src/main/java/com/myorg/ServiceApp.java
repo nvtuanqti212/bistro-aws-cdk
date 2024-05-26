@@ -14,6 +14,7 @@ import software.amazon.awscdk.services.secretsmanager.ISecret;
 import software.amazon.awscdk.services.secretsmanager.Secret;
 import software.constructs.Construct;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,8 +84,13 @@ public class ServiceApp {
 
         Service.ServiceInputParameters serviceInputParameters = new Service.ServiceInputParameters(
                 dockerImageSource,
+                Collections.singletonList(databaseOutputParameters.getDatabaseSecurityGroupId()),
                 environmentVariables(serviceStack, springProfile, databaseOutputParameters)
-        ).withHealthCheckIntervalSeconds(30);
+        ).withHealthCheckIntervalSeconds(20)
+                .withHealthCheckTimeoutSeconds(15)
+                .withUnhealthyThresholdCount(3)
+                .withHealthyThresholdCount(2)
+                .withHealthCheckPath("/actuator");
 
 
         Service service = new Service(
