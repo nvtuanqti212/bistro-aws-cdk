@@ -245,7 +245,7 @@ public class Service extends Construct {
 
         // Adding an explicit dependency from the service to the listeners to avoid "has no load balancer associated" error
         // (see https://stackoverflow.com/questions/61250772/how-can-i-create-a-dependson-relation-between-ec2-and-rds-using-aws-cdk).
-        service.addDependsOn(httpListenerRule);
+        service.addDependency(httpListenerRule);
 
         applicationEnvironment.tag(this);
     }

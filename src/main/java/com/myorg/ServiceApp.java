@@ -10,12 +10,15 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.secretsmanager.ISecret;
 import software.amazon.awscdk.services.secretsmanager.Secret;
 import software.constructs.Construct;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.myorg.constant.InputParameters.ACCOUNT_ID;
@@ -90,7 +93,30 @@ public class ServiceApp {
                 .withHealthCheckTimeoutSeconds(15)
                 .withUnhealthyThresholdCount(3)
                 .withHealthyThresholdCount(2)
-                .withHealthCheckPath("/actuator");
+                .withHealthCheckPath("/actuator")
+                .withTaskRolePolicyStatements(
+                        List.of(
+                                PolicyStatement.Builder.create()
+                                        .sid("AllowDynamoTableAccess")
+                                        .effect(Effect.ALLOW)
+                                        .resources(
+                                                List.of(String.format("arn:aws:dynamodb:%s:%s:table/%s", region, ACCOUNT_ID, applicationEnvironment.prefix("user_action")))
+                                        )
+                                        .actions(List.of(
+                                                "dynamodb:BatchGetItem",
+                                                "dynamodb:BatchWriteItem",
+                                                "dynamodb:ConditionCheckItem",
+                                                "dynamodb:PutItem",
+                                                "dynamodb:DescribeTable",
+                                                "dynamodb:DeleteItem",
+                                                "dynamodb:GetItem",
+                                                "dynamodb:Scan",
+                                                "dynamodb:Query",
+                                                "dynamodb:UpdateItem"
+                                        ))
+                                        .build()
+                        )
+                );
 
 
         Service service = new Service(
