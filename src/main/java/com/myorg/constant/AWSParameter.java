@@ -8,7 +8,7 @@ package com.myorg.constant;
 public class AWSParameter {
     //Network VPC parameters
     public static final  String ACCOUNT_ID = "654654361986";
-
+    public static final String PARAMETER_QUEUE_NAME = "bistroQueueName";
     public static final String PARAMETER_VPC_ID = "vpcId";
     public static final String PARAMETER_HTTP_LISTENER = "httpListenerArn";
     public static final String PARAMETER_HTTPS_LISTENER = "httpsListenerArn";

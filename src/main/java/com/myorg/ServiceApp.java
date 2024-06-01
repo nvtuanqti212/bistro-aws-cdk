@@ -84,6 +84,7 @@ public class ServiceApp {
         );
 
         Database.DatabaseOutputParameters databaseOutputParameters = Database.getOutputParametersFromParameterStore(parametersStack, applicationEnvironment);
+        MessagingStack.MessagingOutputParameters messagingOutputParameters = MessagingStack.getOutputParametersFromParameterStore(parametersStack, applicationEnvironment);
 
         Service.ServiceInputParameters serviceInputParameters = new Service.ServiceInputParameters(
                 dockerImageSource,
@@ -114,10 +115,26 @@ public class ServiceApp {
                                                 "dynamodb:Query",
                                                 "dynamodb:UpdateItem"
                                         ))
+                                        .build(),
+                                PolicyStatement.Builder.create()
+                                        .sid("AllowSQSAccess")
+                                        .effect(Effect.ALLOW)
+                                        .resources(List.of(
+                                                String.format("arn:aws:sqs:%s:%s:%s", region, ACCOUNT_ID, messagingOutputParameters.getTodoSharingQueueName())
+                                        ))
+                                        .actions(List.of(
+                                                "sqs:DeleteMessage",
+                                                "sqs:GetQueueUrl",
+                                                "sqs:ListDeadLetterSourceQueues",
+                                                "sqs:ListQueues",
+                                                "sqs:ListQueueTags",
+                                                "sqs:ReceiveMessage",
+                                                "sqs:SendMessage",
+                                                "sqs:ChangeMessageVisibility",
+                                                "sqs:GetQueueAttributes"))
                                         .build()
                         )
                 );
-
 
         Service service = new Service(
                 serviceStack,
@@ -148,16 +165,6 @@ public class ServiceApp {
         vars.put("MYSQL_USERNAME", databaseSecret.secretValueFromJson("username").unsafeUnwrap());
         vars.put("MYSQL_PASSWORD", databaseSecret.secretValueFromJson("password").unsafeUnwrap());
         vars.put("MYSQL_DDL_AUTO", "update");
-//        vars.put("SPRING_DATASOURCE_URL",
-//                String.format("jdbc:mysql://%s:%s/%s",
-//                        databaseOutputParameters.getEndpointAddress(),
-//                        databaseOutputParameters.getEndpointPort(),
-//                        databaseOutputParameters.getDbName())
-//        );
-//        vars.put("SPRING_DATASOURCE_USERNAME",
-//                databaseSecret.secretValueFromJson("username").unsafeUnwrap());
-//        vars.put("SPRING_DATASOURCE_PASSWORD",
-//                databaseSecret.secretValueFromJson("password").unsafeUnwrap());
         return vars;
     }
 }
