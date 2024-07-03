@@ -95,6 +95,8 @@ Variable Meaning:
 - `-c dockerRepositoryName=<ecr_repo>`: Name of the Docker repository.
 - `-c dockerImageTag=<img_tag>`: Tag for the Docker image.
 
+In the source, you must come to the directory `src/main/java/com/myorg/constant/AWSParameter.java`, then replacing `ACCOUNT_ID` with your AWS account id.
+
 Now opening your cmd at where the directory contains CDK source code and executing respectively below command.
 
 **Network Service**:
