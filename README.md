@@ -7,23 +7,25 @@ What this project offers is hands-on knowledge about getting a Spring Boot appli
 there. I built a continuous deployment pipeline, accessed the most common AWS services from a Spring Boot app, and
 learned how to monitor and nurture the app once it’s live.
 
+The Spring Boot application used for deploying is at this [repo](https://github.com/Bistro-Cheese/cheese-bistro-server)
 # Table Content
-
-//TODO: Need to refer actual part
-
-- Introduction
-- Architecture Overview
-- Pre-requisites
-- Installation
-- Usage
-- Contributing
-- License
+* [Introduction](#introduction)
+  * [Architecture Overview](#architecture-overview)
+  * [Pre-requisites](#pre-requisites)
+  * [AWS Services](#aws-services)
+* [Getting Started](#getting-started)
+* [Usage](#usage)
+* [Checklist](#checklist)
+* [Contributing](#contributing)
+* [Reference & Inspiration](#reference--inspiration)
 
 # Introduction
 
 In this project, we leverage AWS CDK to provision and manage AWS resources needed to deploy a Spring Boot application.
 The primary goal is to demonstrate how to use AWS services in a structured and automated manner, ensuring scalability,
 reliability, and maintainability.
+
+
 
 ## Architecture Overview
 
@@ -39,11 +41,12 @@ This project follows an n-tier architecture which includes:
 ## Pre-requisites
 
 - AWS CLI
+  - You must configure security credentials for the CDK CLI, refer to this [link](https://docs.aws.amazon.com/cdk/v2/guide/configure-access.html)
 - Node.js (for AWS CDK)
 - AWS CDK Toolkit
 - Docker
 - Java 11 or higher
-- Maven or Gradle (for building the Spring Boot application)
+- Maven
 
 ## AWS Services
 
@@ -76,14 +79,66 @@ Document
 | AWS Systems Manager (SSM)                | A service that provides a unified user interface so you can view operational data from multiple AWS services and automate operational tasks across your AWS resources.                             | ✔️     |
 | Elastic Load Balancing (ELB)             | Automatically distributes incoming application traffic across multiple targets, such as Amazon EC2 instances, containers, and IP addresses, in one or more Availability Zones.                     | ✔️     |
 
-## Getting Started
-## Useful commands
 
-* `mvn package`     compile and run tests
-* `cdk ls`          list all stacks in the app
-* `cdk synth`       emits the synthesized CloudFormation template
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk docs`        open CDK documentation
+# Getting Started
+- For setting up AWS CDK, please refer to this [AWS Document](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
+- Make sure that you follow step by step to install all essential tools, packages, and configuration. Let's go to the usage.
+# Usage
+Because I have not built CI/CD for this project so if you want to deploy services, you must deploy each one.
+Variable Meaning:
+- `--profile bistroadmin`: AWS CLI profile to use.
+- `--app "mvn -e -q compile exec:java -Dexec.mainClass=com.myorg.<JAVA_CLASS>"`: Command to compile and execute the CDK app.
+- `-c region=<your_region>`: AWS region for deployment.
+- `-c applicationName=<your_app_name>`: Name of the application.
+- `-c springProfile=<spring_profile>`: Spring Boot profile to use.
+- `-c environmentName=<your_environment>`: Deployment environment name.
+- `-c dockerRepositoryName=<ecr_repo>`: Name of the Docker repository.
+- `-c dockerImageTag=<img_tag>`: Tag for the Docker image.
 
-Enjoy!
+Now opening your cmd at where the directory contains CDK source code and executing respectively below command.
+
+**Network Service**:
+```sh
+cdk deploy --app "mvn -e -q compile exec:java -Dexec.mainClass=com.myorg.NetworkApp" --profile <your_profile> -c region=<your_region> -c environmentName=<your_environment>
+```
+**Docker Repository**:
+```sh
+cdk deploy --app "mvn -e -q compile exec:java -Dexec.mainClass=com.myorg.DockerRepositoryApp" --profile <your_profile> -c region=<your_region> -c environmentName=<your_environment>
+```
+**Database - RDS**:
+```sh
+cdk deploy --app "mvn -e -q compile exec:java -Dexec.mainClass=com.myorg.DatabaseApp" --profile <your_profile> -c region=<your_region> -c environmentName=<your_environment>
+```
+**Queue**:
+
+```sh
+cdk deploy --app "mvn -e -q compile exec:java -Dexec.mainClass=com.myorg.MessagingApp" --profile <your_profile> -c region=<your_region> -c environmentName=<your_environment>
+```
+
+**Your Service**:
+```sh
+cdk deploy --profile bistroadmin --app "mvn -e -q compile exec:java -Dexec.mainClass=com.myorg.ServiceApp"  --profile <your_profile> -c region=<your_region> -c applicationName=<your_app_name> -c springProfile=<spring_profile> -c environmentName=<your_environment> -c dockerRepositoryName=<ecr_repo> -c dockerImageTag=<img_tag> --all
+```
+# Checklist
+
+- [x] Deploying Network Infrastructure + Application Load Balancer
+- [x] Deploying Docker Repository
+- [x] Deploying RDS that is used for database of application
+- [x] Deploying DynamoDB for tracing User Action
+- [x] Deploying Message Queue for Sending Notification Feature
+- [x] Deploying application by leveraging ECS Fargate 
+- [ ] Deploying Simple Email Service
+- [ ] Configuring HTTPS and a Custom Domain with Route 53 and ELB
+- [x] Deploy AWS CloudWatch to collect metrics from application
+- [ ] Alerting with Amazon CloudWatch
+- [ ] Build CI/CD for this CDK project to remove many steps deploying services
+
+
+# Contributing
+Contributions are welcome! Please submit a pull request or open an issue to discuss what you would like to change.
+
+# Reference & Inspiration
+- AWS Official Document: https://docs.aws.amazon.com/
+- Great Project: https://stratospheric.dev/
+- AWS Study Group: https://www.facebook.com/groups/660548818043427/?hoisted_section_header_type=recently_seen&multi_permalinks=1636629737101992
+- AWS FCJ Bootcamp
